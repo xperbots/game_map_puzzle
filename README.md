@@ -138,3 +138,46 @@ interface ProvinceData {
 *   `playClick()`: 点击音效。
 *   `playDing()`: 匹配成功音效。
 *   `playError()`: 错误/失败音效。
+
+---
+
+## ☁️ AWS 部署配置 (Deployment)
+
+游戏已通过 **AWS Amplify** 托管，支持 GitHub 自动部署。
+
+### 生产环境
+
+| 配置项 | 值 |
+|--------|-----|
+| **访问域名** | https://game.xperbots.com |
+| **Amplify App ID** | `d2n2j5kgym83z8` |
+| **Amplify 默认域名** | `https://main.d2n2j5kgym83z8.amplifyapp.com` |
+| **Region** | `us-east-1` |
+| **GitHub 仓库** | `xperbots/game_map_puzzle` |
+| **分支** | `main` |
+| **CloudFront 分发** | `d2hkmk3f02hz1.cloudfront.net` |
+
+### 自动部署流程
+
+```
+git push origin main
+       ↓
+GitHub Webhook 触发
+       ↓
+Amplify 自动构建 (npm run build)
+       ↓
+dist/ 部署到 CloudFront CDN
+       ↓
+https://game.xperbots.com 自动更新
+```
+
+### 管理入口
+
+- **Amplify Console**: [AWS Amplify](https://console.aws.amazon.com/amplify/home?region=us-east-1#/d2n2j5kgym83z8)
+- **Route 53 DNS**: [Hosted Zone](https://console.aws.amazon.com/route53/v2/hostedzones#ListRecordSets/Z0152583325982OF8RM2)
+
+### 注意事项
+
+1. **静态资源路径**: 确保 `public/` 目录下的文件（如 `map_data.json`）使用相对路径 `./` 引用。
+2. **构建输出**: Vite 构建后的文件位于 `dist/`，Amplify 会自动部署此目录。
+3. **费用**: 按托管存储 + 流量计费，低流量场景接近免费。
