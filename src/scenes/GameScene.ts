@@ -2,126 +2,141 @@ import Phaser from 'phaser';
 import { GameMapData } from '../types';
 import MapPiece from '../objects/MapPiece';
 import MapSlot from '../objects/MapSlot';
+import { MapTextureGenerator } from '../utils/MapTextureGenerator';
 
 export default class GameScene extends Phaser.Scene {
     private mapData!: GameMapData;
     private slots: MapSlot[] = [];
     private pieces: MapPiece[] = [];
+    private slotMap: Map<number, MapSlot> = new Map();
+    private currentMapScale: number = 1.0;
 
     constructor() {
-        super('GameScene');
+        super({ key: 'GameScene' });
     }
 
-    init(data: { mapData: GameMapData }) {
+    create(data: { mapData: GameMapData }) {
         this.mapData = data.mapData;
-    }
+        console.log('GameScene: Starting Level 1');
 
-    create() {
         // Soft gradient or solid pastel color
-        const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xfff5f5); // Soft Pink
+        // Light Cyan to contrast with White Map
+        const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xe0f7fa);
         bg.setOrigin(0);
 
-        if (!this.mapData) {
-            console.error("Map Data missing in GameScene!");
-            return;
-        }
+        // 0. Generate Textures (Optimized Rendering)
+        const textureGen = new MapTextureGenerator(this, this.mapData);
+        textureGen.generateTextures();
 
-        // Map Sizing Calculation
-        // Original Data is 1600x1200 (approx)
-        // We want the MAP (Slots) to fit in the center, maybe 600px height.
-        // Scale = 600 / 1200 = 0.5
-        // Scale = 1.2 for Mainland focus (Islands might be cut off but puzzle is better)
-        const MAP_SCALE = 1.2;
-        const SCREEN_CX = this.scale.width / 2;
-        const SCREEN_CY = this.scale.height / 2;
+        // 1. Calculate Content Bounds to Fit Screen
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        this.mapData.provinces.forEach(p => {
+            if (p.bounds.minX < minX) minX = p.bounds.minX;
+            if (p.bounds.minY < minY) minY = p.bounds.minY;
+            if (p.bounds.maxX > maxX) maxX = p.bounds.maxX;
+            if (p.bounds.maxY > maxY) maxY = p.bounds.maxY;
+        });
 
-        // Shift Map Center slightly UP because China's shape is top-heavy relative to center
-        // Center of map data is approx 800, 600.
-        const MAP_DATA_CX = 800;
-        const MAP_DATA_CY = 500; // Shifted UP (was 600)
+        const contentWidth = maxX - minX;
+        const contentHeight = maxY - minY;
+        const cx = minX + contentWidth / 2;
+        const cy = minY + contentHeight / 2;
 
-        // Colors for pieces
-        const PALETTE = [0xffadad, 0xffd6a5, 0xfdffb6, 0xcaffbf, 0x9bf6ff, 0xa0c4ff, 0xbdb2ff, 0xffc6ff];
+        const SCREEN_W = this.scale.width;
+        const SCREEN_H = this.scale.height;
+        const TARGET_HEIGHT = SCREEN_H * 0.85;
+
+        // Calculate Scale
+        const MAP_SCALE = TARGET_HEIGHT / contentHeight;
+        this.currentMapScale = MAP_SCALE;
+
+        // Center Offset
+        const SCREEN_CX = SCREEN_W / 2;
+        const SCREEN_CY = SCREEN_H / 2;
+
+        // Colors for pieces (Soft Pastel Palette)
+        const PALETTE = [
+            0xffadad, 0xffd6a5, 0xfdffb6, 0xcaffbf,
+            0x9bf6ff, 0xa0c4ff, 0xbdb2ff, 0xffc6ff
+        ];
+        let colorIndex = 0;
 
         this.mapData.provinces.forEach((province, index) => {
-            // 1. Create Slot (The Target)
-            const slotX = (province.center.x - MAP_DATA_CX) * MAP_SCALE + SCREEN_CX;
-            const slotY = (province.center.y - MAP_DATA_CY) * MAP_SCALE + SCREEN_CY;
+            // 2. Create Slot (The Target)
+            const slotX = (province.center.x - cx) * MAP_SCALE + SCREEN_CX;
+            const slotY = (province.center.y - cy) * MAP_SCALE + SCREEN_CY;
 
             const slot = new MapSlot(this, slotX, slotY, province);
             slot.setScale(MAP_SCALE);
-            slot.setDepth(0); // Background
             this.add.existing(slot);
             this.slots.push(slot);
+            this.slotMap.set(province.adcode, slot);
 
-            // 2. Create Piece (The Draggable)
-            // Scatter logic: Left and Right Columns
-            let pieceX, pieceY;
-            const MARGIN_X = 50;
-            const COLUMN_WIDTH = 250;
-
+            // 3. Create Piece (The Draggable)
             const isLeft = index % 2 === 0;
-            if (isLeft) {
-                // Left Side
-                pieceX = Phaser.Math.Between(MARGIN_X, COLUMN_WIDTH);
-            } else {
-                // Right Side
-                pieceX = Phaser.Math.Between(this.scale.width - COLUMN_WIDTH, this.scale.width - MARGIN_X);
-            }
-            pieceY = Phaser.Math.Between(100, this.scale.height - 100);
+            const scatterX = isLeft ? Phaser.Math.Between(50, 300) : Phaser.Math.Between(SCREEN_W - 300, SCREEN_W - 50);
+            const scatterY = Phaser.Math.Between(50, SCREEN_H - 50);
 
-            const piece = new MapPiece(this, pieceX, pieceY, province);
-            piece.setScale(MAP_SCALE);
-            piece.setDepth(100); // Foreground
+            const piece = new MapPiece(this, province, MAP_SCALE, { x: scatterX, y: scatterY });
 
-            // Random Color
-            const color = PALETTE[index % PALETTE.length];
+            // Base Scale is set in constructor now
+            // piece.setBaseScale(MAP_SCALE);
+
+            // Assign color
+            const color = PALETTE[colorIndex % PALETTE.length];
+            colorIndex++;
             piece.setTintUnsnapped(color);
 
             this.add.existing(piece);
             this.pieces.push(piece);
 
-            // Listen for checks
+            // Setup Event Listeners
             piece.on('ids-dropped', this.checkSnapping, this);
+            piece.on('drag-update', this.handleDragUpdate, this);
         });
+
+        this.add.text(10, 10, 'Level 1: Magnetic Map', { fontSize: '24px', color: '#000' });
 
         // Debug Helper for Automating Verification
         (window as any).solveLevel1 = () => {
             this.pieces.forEach(p => {
-                const slot = this.slots.find(s => s.provinceData.adcode === p.provinceData.adcode);
+                const slot = this.slotMap.get(p.provinceData.adcode);
                 if (slot) {
                     p.x = slot.x;
                     p.y = slot.y;
-                    p.snapTo(slot.x, slot.y);
+                    p.snapTo(slot.x, slot.y, true);
                 }
             });
         };
-        (window as any).getDragTargets = () => {
-            return this.pieces.filter(p => !p.isSnapped).map(p => {
-                const slot = this.slots.find(s => s.provinceData.adcode === p.provinceData.adcode);
-                return {
-                    pieceX: p.x, pieceY: p.y,
-                    targetX: slot?.x, targetY: slot?.y,
-                    adcode: p.provinceData.adcode
-                };
-            });
-        };
+    }
 
-        this.add.text(10, 10, 'Level 1: Magnetic Map', { fontSize: '24px', color: '#000' });
+    private handleDragUpdate(piece: MapPiece) {
+        const slot = this.slotMap.get(piece.provinceData.adcode);
+        if (!slot) return;
+
+        // Check distance for "Magnetic Hint"
+        const dist = Phaser.Math.Distance.Between(piece.x, piece.y, slot.x, slot.y);
+        const HINT_THRESHOLD = 100 * this.currentMapScale;
+
+        if (dist < HINT_THRESHOLD) {
+            slot.highlight();
+        } else {
+            slot.reset();
+        }
     }
 
     private checkSnapping(piece: MapPiece) {
-        // Find corresponding slot
-        const slot = this.slots.find(s => s.provinceData.adcode === piece.provinceData.adcode);
+        const slot = this.slotMap.get(piece.provinceData.adcode);
         if (!slot) return;
 
-        // Calculate distance
         const dist = Phaser.Math.Distance.Between(piece.x, piece.y, slot.x, slot.y);
-        const SNAP_THRESHOLD = 50; // pixels
+        const SNAP_THRESHOLD = 50 * this.currentMapScale;
 
         if (dist < SNAP_THRESHOLD) {
-            piece.snapTo(slot.x, slot.y);
-            console.log(`Snapped ${piece.provinceData.name}!`);
+            // Correct placement
+            piece.snapTo(slot.x, slot.y, true);
+            slot.reset(); // Clear highlight
+
             this.checkWinCondition();
         }
     }
@@ -130,10 +145,13 @@ export default class GameScene extends Phaser.Scene {
         const allSnapped = this.pieces.every(p => p.isSnapped);
         if (allSnapped) {
             console.log("All pieces placed! Transitioning...");
-            // Slight delay then transition
             this.time.delayedCall(2000, () => {
                 this.scene.start('Level2Scene', { mapData: this.mapData });
+                // console.log("Win!");
             });
         }
     }
+
+    // Helper to get scale for external use if needed (e.g. MapPiece used to ask for it)
+    public getMapScale() { return this.currentMapScale; }
 }

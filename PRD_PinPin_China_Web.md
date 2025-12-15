@@ -40,26 +40,27 @@ graph TD
   C --> D["结算页"]
   D --> A
 ```
+ ### 4. Visual Design (UI/UX)
+*   **Color Palette:**
+    *   **Pastel Theme**: Uses soft, modern pastel colors (e.g., Pastel Pink `0xffadad`, Mint `0xcaffbf`, Sky Blue `0xa0c4ff`) for puzzle pieces to create a pleasant, non-intrusive visual experience.
+    *   **Completion Style**: Snapped pieces transform into a **Unified Red Flag** texture.
+    *   **Background**: Light Cyan (`0xe0f7fa`) or similar soft tone to provide contrast for the white map slot base.
 
-## 4. 用户界面设计
+*   **Map Elements:**
+    *   **Base Map**: Clean White relief style with light grey strokes (`#cccccc`).
+    *   **Active Pieces**: 3D Extruded effect with distinct pastel colors.
+    *   **Snapped Pieces**: **Flat** (No depth), turning Red to form the Chinese National Flag.
+    *   **Labels**: 
+        *   **Smart Abbreviation**: Provinces display 2-character short names (e.g., "新疆", "上海"). Exceptions: "黑龙江", "内蒙古" (3 characters).
+        *   **Visibility**: Text rendered on a top-level layer (Z>2000) to prevent occlusion.
+        *   **Small Provinces**: Labels offset automatically for tiny areas like HK/Macau.
 
-### 4.1 设计规范
-- 主色：#FF6B6B（活力红），辅色：#4ECDC4（青绿）
-- 按钮：圆角 8 px，悬停放大 1.05 倍，点击阴影
-- 字体：思源黑体，标题 28 px，正文 16 px
-- 布局：卡片式，顶部导航栏，底部操作栏
-- 图标：扁平化，使用 Emoji 或 SVG 图标库
-
-### 4.2 页面设计概览
-| 页面 | 模块 | UI 元素 |
-|------|------|---------|
-| 首页 | 开始按钮 | 大号圆角按钮，主色背景，白色文字，悬停发光 |
-| 第一关 | 拼图槽 | 半透明描边，吸附成功时高亮闪光 |
-| 第二关 | 掉落方块 | 省形状用轮廓填充，省会名用圆角标签，掉落加速 |
-| 结算页 | 得分星级 | 五星评分，动态数字跳动，分享按钮带二维码 |
-
-### 4.3 响应式策略
-桌面优先：默认 1280×720 画布，移动端自动缩放并启用触摸优化（防抖 16 ms）。
+*   **Level 1 (Magnetic Map):**
+    *   **Goal**: Reassemble the map.
+    *   **Feedback**: 
+        *   **Drag**: Piece scales up (1.1x) and casts shadow.
+        *   **Snap**: Magnetic 'clack' sound, piece snaps to slot, turns Flat Red (Flag segment).
+        *   **Win**: Full china map becomes a complete Five-Star Red Flag.
 
 ## 5. 音效与性能
 - 音效：拖拽、吸附、消除、失败、胜利共 5 段，压缩至 64 kbps AAC/OGG，总大小 < 300 KB

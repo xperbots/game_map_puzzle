@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build-map": "npx tsx scripts/build-map-data.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "d3-geo": "^3.1.1",
     "simplify-js": "^1.2.4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1"
   }

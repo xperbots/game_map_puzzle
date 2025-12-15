@@ -7,10 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const INPUT_FILE = path.resolve(__dirname, '../map_materials/中华人民共和国各省.geojson');
+const INPUT_FILE = path.resolve(__dirname, '../map_materials/中华人民共和国各省.json');
 const OUTPUT_FILE = path.resolve(__dirname, '../src/assets/map_data.json');
-const CANVAS_WIDTH = 1600;
-const CANVAS_HEIGHT = 1200;
+const CANVAS_WIDTH = 8000;
+const CANVAS_HEIGHT = 6000;
 const PADDING = 50;
 
 // Ensure output directory exists
@@ -76,10 +76,8 @@ async function build() {
             continue;
         }
 
-        // 3. Calculate Bounds and Center
-        // We can use pathGenerator.bounds and centroid
-        const [[x0, y0], [x1, y1]] = pathGenerator.bounds(feature);
-        const [cx, cy] = pathGenerator.centroid(feature);
+        // 3. Calculate Bounds and Center FROM the projected points (NOT from d3 pathGenerator)
+        // d3 pathGenerator.bounds() includes the projection frame which is wrong
 
         // 4. Extract Projected Points (for Phaser Polygon)
         // Handle Polygon and MultiPolygon
@@ -89,22 +87,17 @@ async function build() {
         // Helper to project a ring
         const projectRing = (ring: any[]) => {
             return ring.map(coord => {
-                const [x, y] = projection(coord) || [0, 0];
-                return { x, y };
-            });
+                const projected = projection(coord);
+                if (!projected) return { x: 0, y: 0 };
+                return { x: projected[0], y: projected[1] };
+            }).filter(p => p.x !== 0 || p.y !== 0); // Filter out null projections
         };
 
         if (geometry.type === 'Polygon') {
             // First ring is exterior
             points = projectRing(geometry.coordinates[0]);
         } else if (geometry.type === 'MultiPolygon') {
-            // Find the largest polygon by identifying the simple polygon with max points (heuristic)
-            // Or better: flatten all, but for a puzzle piece we usually want the main island.
-            // Let's just take the first ring of the largest polygon in the MultiPolygon?
-            // Or simpler: Just take the first polygon's outer ring. 
-            // Most provinces are Polygons. MultiPolygons are islands.
-            // For the puzzle game, checking collision with the main body is usually enough.
-            // Let's take the ring with the most points as the "main" body.
+            // Find the largest polygon by point count
             let maxPoints = 0;
             let bestRing: any[] = [];
 
@@ -118,40 +111,33 @@ async function build() {
             points = projectRing(bestRing);
         }
 
-        // Simplify points to reduce vertex count for Phaser
-        // We use the imported simplify-js (which I need to uncomment or use if I removed it)
-        // Since I removed the import in previous step to fix build, I need to add valid simplification logic.
-        // But for now, let's output raw projected points or implementation simple distance check?
-        // Let's stick to raw projected first, optimization later if needed.
-        // Actually, d3-geo already simplifies if we set valid context? No.
-        // Let's re-add simplify-js properly if we want optimization.
-        // For 34 provinces, 100-200 points each is fine.
+        // Skip if no valid points
+        if (points.length === 0) {
+            console.warn(`No valid points for ${name}, skipping...`);
+            continue;
+        }
 
-        // 4. Simplification (Optional but critical for performance)
-        // Note: d3-geoPath produces a string. To simplify, we might need to access the coordinates directly.
-        // However, d3-geo has built-in resampling. But for "physics" polygons we need points.
-        // For this step, we will stick to the SVG Path for visual rendering.
-        // If we need physics polygons later, we can extract them from the SVG d string or use the geometry coordinates.
-        // For Phaser, we can simply use the SVG path to create a Graphics object or Physics body.
+        // Calculate bounds FROM the actual points (not from d3 which includes frame)
+        const xs = points.map(p => p.x);
+        const ys = points.map(p => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
 
-        // Let's keep the full path for high-quality rendering, 
-        // but if we were strictly following the architecture plan, we might want to simplify the coordinates first.
-        // But d3-geo projects directly to string.
+        // Calculate center as centroid of the points
+        const cx = xs.reduce((a, b) => a + b, 0) / xs.length;
+        const cy = ys.reduce((a, b) => a + b, 0) / ys.length;
 
-        // REVISION: The architecture called for simplification.
-        // Parsing the SVG path string back to points is one way, or projecting the coordinates manually.
-        // For now, let's output the SVG path string. It's standard and Phaser handles it well (Graphics.fillPath).
-        // Physics bodies can be approximated from the bounds or circle for the "Slot" logic (Center Point Distance).
-        // The game logic only requires "Center Point Distance" for snapping, so complex physics bodies are NOT required yet.
-        // Simple bounding box is enough for input detection optimization.
+        console.log(`${name}: bounds (${minX.toFixed(0)},${minY.toFixed(0)}) to (${maxX.toFixed(0)},${maxY.toFixed(0)}), center (${cx.toFixed(0)},${cy.toFixed(0)}), ${points.length} points`);
 
         provinces.push({
             name,
             adcode,
             path: svgPath,
-            points: points, // New physics/graphics data
+            points: points,
             center: { x: cx, y: cy },
-            bounds: { minX: x0, minY: y0, maxX: x1, maxY: y1 }
+            bounds: { minX, minY, maxX, maxY }
         });
     }
 

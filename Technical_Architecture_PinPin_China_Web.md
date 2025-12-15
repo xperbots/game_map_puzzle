@@ -12,6 +12,18 @@ graph TD
   end
 ```
 
+### 3. Rendering Strategy (Phaser 3)
+*   **Procedural Texture Generation (`MapTextureGenerator`)**:
+    *   **3D Extrusion**: Generates 'thick' puzzle pieces by rendering the province shape multiple times with vertical offsets (STACK_DEPTH=6) to texture.
+    *   **Flag Textures**: procedurally generates a "Five-Star Red Flag" texture for each province. Key innovation: Calculates the **Map Content Bounds** (not Canvas bounds) to align the flag stars correctly over the Xinjiang/Gansu region, ensuring the flag looks continuous when assembled.
+*   **Scene Organization**:
+    *   **Layering**:
+        *   `Background`: Z=0
+        *   `Slots`: Z=1 (Flat White)
+        *   `Pieces`: Z=10+ (3D Extruded)
+        *   `Labels`: Z=2000 (Top Layer). Labels are detached from Piece Containers to avoid Z-fighting/clip issues and synced in `update()` loop.
+    *   **Performance**: Textures are generated *once* at startup (`preload`). During gameplay, standard Sprites are used, minimizing draw calls.
+
 ## 2. Technology Description
 - **前端核心**: Phaser 3.60+ (WebGL 渲染, Arcade Physics)
 - **开发语言**: TypeScript @ 5.x
@@ -20,6 +32,10 @@ graph TD
     - Input: `中华人民共和国各省.geojson` (Standard GeoJSON with Adcodes)
     - Projections: `d3-geo` (For Mercator projection: Lng/Lat -> Pixel)
     - Simplification: `simplify-js` (High-performance polyline simplification)
+- **渲染技术**:
+    - **Procedural Texture Gen**: 使用 `MapTextureGenerator` 在运行时生成高质量纹理。
+    - **3D Extrusion**: 通过图层堆叠实现伪 3D 积木效果。
+    - **Dynamic Scaling**: 根据屏幕尺寸动态计算最佳缩放比，适配各种设备。
 
 ## 3. Route Definitions
 | Route | Purpose |
