@@ -2,7 +2,26 @@
 
 All notable changes to the "PinPin China" project will be documented in this file.
 
-## [0.2.0] - 2025-12-14
+## [0.3.0] - 2025-12-14
+
+### Added
+- **Level 2 Hard Mode**: New gameplay scene "Magnetic Map (Hard)".
+    - **No Borders**: Map background shows only the outer silhouette of China.
+    - **Precision Snap**: Pieces require precise placement (<15% distance deviation) to snap.
+    - **Conditional Labels**: Labels are hidden by default, appearing only after successful snap (except Municipality/SAR).
+- **Transition System**: Implemented `TransitionScene` for smooth visual progression between levels (Celebration -> Fade Out -> Title Card).
+- **Layering Strategy**: Established strict Z-index rules (Background -100, Map -1, Pieces 0+) to ensure visibility.
+
+### Changed
+- **Feedback Mechanics**: Refined `MapPiece` to support difficulty modes. In Hard Mode, "Yellow Tint" and specific visual hints are disabled during drag to increase difficulty, while keeping tactile feedback (Sound/Scale).
+- **Snap Logic**: Migrated from simple bounding box overlap to **Euclidean Distance** check for more reliable snapping of irregular shapes.
+
+### Fixed
+- **Map Occlusion**: Fixed an issue where the map outline was occluded by the background by adjusting depth layers.
+- **Snap Bug**: Resolved a regression where `ids-dropped` event was not emitted in Hard Mode, preventing snapping.
+- **Red Flag Visibility**: Fixed an issue where the red flag texture would not appear due to tint not being reset to white.
+
+
 
 ### Added
 - **Flag Completion Effect**: Level 1 now features a "Red Flag" completion mechanic. Snapped pieces reveal a portion of the Five-Star Red Flag, creating a unified visual upon completion.

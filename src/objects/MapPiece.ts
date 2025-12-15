@@ -8,13 +8,15 @@ export default class MapPiece extends Phaser.GameObjects.Container {
     public isSnapped: boolean = false;
     public isDragging: boolean = false;
     private baseColor: number = 0xffffff;
+    private difficulty: 'easy' | 'hard' = 'easy';
 
     private label: Phaser.GameObjects.Text;
     private labelOffsetX = 0;
     private labelOffsetY = 0;
 
-    constructor(scene: Phaser.Scene, public provinceData: ProvinceData, private baseScale: number, public originalPosition: { x: number, y: number }) {
+    constructor(scene: Phaser.Scene, public provinceData: ProvinceData, private baseScale: number, public originalPosition: { x: number, y: number }, difficulty: 'easy' | 'hard' = 'easy') {
         super(scene, 0, 0); // Initial position 0,0, will be set by originalPosition later
+        this.difficulty = difficulty;
         this.setData('province', provinceData.name);
 
         // ...
@@ -121,6 +123,7 @@ export default class MapPiece extends Phaser.GameObjects.Container {
 
     private onHover() {
         if (this.isSnapped || this.isDragging) return;
+        // Keep hover effect for all modes (user wanted "other effects kept")
         this.sprite.setAlpha(0.8);
         this.setScale(this.baseScale * 1.1);
         this.scene.children.bringToTop(this);
@@ -128,6 +131,7 @@ export default class MapPiece extends Phaser.GameObjects.Container {
 
     private onOut() {
         if (this.isSnapped || this.isDragging) return;
+        // Keep hover effect for all modes
         this.sprite.setAlpha(1);
         this.setScale(this.baseScale);
     }
@@ -154,20 +158,16 @@ export default class MapPiece extends Phaser.GameObjects.Container {
     private onDragStart() {
         if (this.isSnapped) return;
         this.isDragging = true;
-        soundManager.playPop();
         this.scene.children.bringToTop(this);
 
-        // If we were hovering, we are already scaled 1.1
-        // If we drag without hover (touch?), we might need to scale.
-        // Assuming mouse, we are hovering.
-        // Let's ensure we are at "Drag Scale" which is Base * 1.1 roughly.
-        // Simplest logic: If not hovering (scale=1), scale up. If hovering (scale=1.1), keep it?
-        // Let's just create a distinct visual state for dragging.
-
-        // Actually, preventing onOut during drag is the key.
-        // And we want a slightly larger scale for drag maybe?
-        // Let's just keep the hover scale.
+        soundManager.playPop();
         this.setScale(this.baseScale * 1.1);
+
+        if (this.difficulty === 'hard') {
+            // HARD MODE: No tint change (avoid "yellow" confusion)
+            return;
+        }
+
         this.sprite.setTint(0xffeeee);
     }
 
@@ -196,10 +196,14 @@ export default class MapPiece extends Phaser.GameObjects.Container {
 
         // Safe approach: 
         // Restore Tint.
-        this.sprite.setTint(this.baseColor);
+        if (this.difficulty !== 'hard') {
+            this.sprite.setTint(this.baseColor);
+        }
 
         // We need to manually check if pointer is Over to decide scale.
         const pointer = this.scene.input.activePointer;
+        // Use visible bounds logic if possible, or naive check
+        // getBounds() works for Container
         const isOver = this.getBounds().contains(pointer.x, pointer.y);
 
         if (!isOver) {
@@ -260,6 +264,7 @@ export default class MapPiece extends Phaser.GameObjects.Container {
 
         // Clear Tint (Show Red Flag)
         this.sprite.clearTint();
+        this.sprite.tint = 0xffffff; // Explicitly reset tint to white to ensure flag colors show
 
         // Reset Scale to base (1.0 relative)
         this.setScale(this.baseScale);
@@ -270,6 +275,34 @@ export default class MapPiece extends Phaser.GameObjects.Container {
             this.label.setStroke('#000000', 2);
             // Ensure depth is still high?
             this.label.setDepth(2001);
+            // HARD MODE: Show label after snap
+            this.label.setVisible(true);
+        }
+    }
+
+    /**
+     * Return piece to its original scatter position (for failed snap in hard mode).
+     */
+    public returnToStart() {
+        soundManager.playError();
+        this.scene.tweens.add({
+            targets: this,
+            x: this.originalPosition.x,
+            y: this.originalPosition.y,
+            scaleX: this.baseScale,
+            scaleY: this.baseScale,
+            duration: 300,
+            ease: 'Back.Out'
+        });
+        this.sprite.setTint(this.baseColor);
+    }
+
+    /**
+     * Set label visibility (for hard mode conditional display).
+     */
+    public setLabelVisible(visible: boolean) {
+        if (this.label) {
+            this.label.setVisible(visible);
         }
     }
 }

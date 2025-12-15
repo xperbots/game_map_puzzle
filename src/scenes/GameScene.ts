@@ -107,6 +107,10 @@ export default class GameScene extends Phaser.Scene {
                     p.snapTo(slot.x, slot.y, true);
                 }
             });
+            // Trigger win condition check after a short delay
+            this.time.delayedCall(500, () => {
+                this.checkWinCondition();
+            });
         };
     }
 
@@ -144,10 +148,15 @@ export default class GameScene extends Phaser.Scene {
     private checkWinCondition() {
         const allSnapped = this.pieces.every(p => p.isSnapped);
         if (allSnapped) {
-            console.log("All pieces placed! Transitioning...");
-            this.time.delayedCall(2000, () => {
-                this.scene.start('Level2Scene', { mapData: this.mapData });
-                // console.log("Win!");
+            console.log("Level 1 Complete! Transitioning to Level 2...");
+            this.time.delayedCall(1500, () => {
+                // Route to TransitionScene with Level 2 Hard info
+                this.scene.start('TransitionScene', {
+                    mapData: this.mapData,
+                    nextLevel: 'Level2HardScene',
+                    title: 'Level 2: 挑战模式',
+                    subtitle: '无边界提示 · 精准释放'
+                });
             });
         }
     }

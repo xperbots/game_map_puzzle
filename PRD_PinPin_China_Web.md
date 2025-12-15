@@ -12,9 +12,10 @@
 ### 2.2 功能模块
 本游戏包含以下最小页面集合：
 1. **首页**：开始游戏、难度选择、音效开关
-2. **第一关**：磁力拼图，拖拽省份至凹槽并吸附
-3. **第二关**：省会雨，点击匹配掉落方块（含 5 秒“Pair Pool”规则）
-4. **结算页**：得分、评价、重玩/分享
+2. **第一关 (Level 1 - Easy)**：磁力拼图，拖拽省份至凹槽并吸附，含辅助提示
+3. **第二关 (Level 2 - Hard)**：进阶拼图，无省界提示、无悬停提示、需精确释放
+4. **第三关 (Level 3 - Capital Rain)**：省会雨，点击匹配掉落方块（含 5 秒"Pair Pool"规则）
+5. **结算页**：得分、评价、重玩/分享
 
 ### 2.3 页面详情
 | 页面 | 模块 | 功能描述 |
@@ -22,23 +23,28 @@
 | 首页 | 开始按钮 | 进入第一关 |
 | 首页 | 难度选择 | 切换拼图数量与掉落速度 |
 | 首页 | 音效开关 | 全局静音/开启 |
-| 第一关 | 拼图槽 | 显示轮廓与吸附反馈 |
-| 第一关 | 拼图块 | 可拖拽、自动吸附、播放音效与粒子 |
-| 第二关 | 掉落区 | 省形状与省会名方块自上而下掉落 |
-| 第二关 | 点击匹配 | 选中→再点击匹配，成功则消除并加分 |
-| 第二关 | Pair Pool | 5 秒内必须生成对应省会名，否则游戏结束 |
+| **第一关 (Easy)** | 拼图槽 | 显示**省份轮廓**与吸附反馈 |
+| 第一关 | 拼图块 | 可拖拽、**悬停提示**、自动吸附、播放音效 |
+| 第一关 | 标签 | **始终显示**省份简称 |
+| **第二关 (Hard)** | 拼图槽 | 仅显示**中国外轮廓**，无省界线 |
+| 第二关 | 拼图块 | 可拖拽、**无悬停提示**、需**90%重叠**才吸附 |
+| 第二关 | 标签 | **仅直辖市显示**，其他省份拼对后显示 |
+| **第三关 (Capital Rain)** | 掉落区 | 省形状与省会名方块自上而下掉落 |
+| 第三关 | 点击匹配 | 选中→再点击匹配，成功则消除并加分 |
+| 第三关 | Pair Pool | 5 秒内必须生成对应省会名，否则游戏结束 |
 | 结算页 | 得分展示 | 显示总分与星级 |
 | 结算页 | 重玩/分享 | 本地重玩或生成分享图 |
 
 ## 3. 核心流程
-游客打开首页 → 选择难度 → 进入第一关（磁力拼图）→ 完成全部拼图 → 进入第二关（省会雨）→ 在 5 秒内匹配“省份-省会”对 → 失败则游戏结束，成功则继续 → 结算页查看得分与评价。
+游客打开首页 → 选择难度 → 进入第一关（磁力拼图 Easy）→ 完成 → 进入第二关（磁力拼图 Hard）→ 完成 → 进入第三关（省会雨）→ 结算页。
 
 ```mermaid
 graph TD
-  A["首页"] --> B["第一关：磁力拼图"]
-  B --> C["第二关：省会雨"]
-  C --> D["结算页"]
-  D --> A
+  A["首页"] --> B["Level 1: 磁力拼图 (Easy)"]
+  B --> C["Level 2: 磁力拼图 (Hard)"]
+  C --> D["Level 3: 省会雨"]
+  D --> E["结算页"]
+  E --> A
 ```
  ### 4. Visual Design (UI/UX)
 *   **Color Palette:**
@@ -55,12 +61,25 @@ graph TD
         *   **Visibility**: Text rendered on a top-level layer (Z>2000) to prevent occlusion.
         *   **Small Provinces**: Labels offset automatically for tiny areas like HK/Macau.
 
-*   **Level 1 (Magnetic Map):**
-    *   **Goal**: Reassemble the map.
+*   **Level 1 (Magnetic Map - Easy):**
+    *   **Goal**: Reassemble the map with visual assistance.
     *   **Feedback**: 
+        *   **Base Map**: Shows all province borders (白色浮雕风格).
         *   **Drag**: Piece scales up (1.1x) and casts shadow.
+        *   **Hover Hint**: Slot glows **yellow** when correct piece passes over.
         *   **Snap**: Magnetic 'clack' sound, piece snaps to slot, turns Flat Red (Flag segment).
+        *   **Labels**: Always visible on pieces.
         *   **Win**: Full china map becomes a complete Five-Star Red Flag.
+
+*   **Level 2 (Magnetic Map - Hard):**
+    *   **Goal**: Reassemble the map using shape recognition only.
+    *   **Difficulty Increases**:
+        *   **Base Map**: Only **China's outer border** visible (无省界线).
+        *   **No Hover Hint**: Slots do not glow when piece passes over.
+        *   **Refined Drag Feedback**: Piece scales up (1.1x) and plays sound for tactile feel, but **does NOT change color (Tint)** to avoid visual confusion with map highlighting.
+        *   **Precision Snap**: Piece must be released within **strict distance threshold** (pseudo-90% overlap) to snap.
+        *   **Labels**: Hidden by default. **直辖市 (北京、上海、天津、重庆) + 港澳 (香港、澳门) 始终显示**. Other labels appear only after correct snap.
+    *   **Win**: Same Red Flag completion effect as Level 1.
 
 ## 5. 音效与性能
 - 音效：拖拽、吸附、消除、失败、胜利共 5 段，压缩至 64 kbps AAC/OGG，总大小 < 300 KB
