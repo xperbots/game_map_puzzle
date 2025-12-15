@@ -7,6 +7,8 @@ import TransitionScene from './scenes/TransitionScene';
 import TestScene from './scenes/TestScene';
 
 import StartScene from './scenes/StartScene';
+import EndScene from './scenes/EndScene';
+import HUDScene from './scenes/HUDScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -25,7 +27,7 @@ const config: Phaser.Types.Core.GameConfig = {
             debug: false
         }
     },
-    scene: [BootScene, StartScene, GameScene, TransitionScene, Level2HardScene, Level2Scene, TestScene]
+    scene: [BootScene, StartScene, GameScene, HUDScene, TransitionScene, Level2HardScene, Level2Scene, EndScene, TestScene]
 };
 
 new Phaser.Game(config);

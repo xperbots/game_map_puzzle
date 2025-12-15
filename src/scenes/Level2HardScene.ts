@@ -35,6 +35,10 @@ export default class Level2HardScene extends Phaser.Scene {
         // Camera fade in
         this.cameras.main.fadeIn(500, 255, 255, 255);
 
+        // Ensure HUD is running
+        // We will do this after calculation to avoid race conditions, or just here.
+        // Moved down to ensure Z-order.
+
         // Background
         const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xf5f0e8);
         bg.setOrigin(0);
@@ -58,6 +62,13 @@ export default class Level2HardScene extends Phaser.Scene {
         const contentHeight = maxY - minY;
         const cx = minX + contentWidth / 2;
         const cy = minY + contentHeight / 2;
+
+        // Ensure HUD is on top
+        this.scene.launch('HUDScene');
+        this.scene.bringToTop('HUDScene');
+
+        // Add Level Title
+        this.add.text(10, 10, '省份拼拼看-挑战模式', { fontSize: '24px', color: '#000' }).setDepth(100);
 
         const SCREEN_W = this.scale.width;
         const SCREEN_H = this.scale.height;
@@ -96,7 +107,9 @@ export default class Level2HardScene extends Phaser.Scene {
 
             // Create Piece (scattered to sides)
             const isLeft = index % 2 === 0;
-            const scatterX = isLeft ? Phaser.Math.Between(50, 300) : Phaser.Math.Between(SCREEN_W - 300, SCREEN_W - 50);
+            const scatterX = isLeft
+                ? Phaser.Math.Between(50, 200)
+                : Phaser.Math.Between(SCREEN_W - 200, SCREEN_W - 50);
             const scatterY = Phaser.Math.Between(50, SCREEN_H - 50);
 
             const piece = new MapPiece(this, province, MAP_SCALE, { x: scatterX, y: scatterY }, 'hard');
@@ -168,15 +181,10 @@ export default class Level2HardScene extends Phaser.Scene {
     private checkWinCondition() {
         const allSnapped = this.pieces.every(p => p.isSnapped);
         if (allSnapped) {
-            console.log("Level 2 Complete! Transitioning to Level 3...");
+            console.log("Level 2 Complete! Transitioning to End Scene...");
             this.time.delayedCall(2000, () => {
-                // Transition to Level 3 (Capital Rain)
-                this.scene.start('TransitionScene', {
-                    mapData: this.mapData,
-                    nextLevel: 'Level2Scene', // This is the Capital Rain scene (now Level 3)
-                    title: 'Level 3: 省会雨',
-                    subtitle: '匹配省份与省会'
-                });
+                // Direct jump to End Scene to ensure it appears reliably
+                this.scene.start('EndScene');
             });
         }
     }

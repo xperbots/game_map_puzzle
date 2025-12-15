@@ -1,7 +1,23 @@
 # Changelog
 
 All notable changes to the "PinPin China" project will be documented in this file.
+## [0.4.0] - 2025-12-15
 
+### Added
+- **Game Flow Overhaul**: Implemented clear progression: Start -> Level 1 -> Level 2 -> End.
+- **Localization**: Full Chinese localization for Titles ("省份拼拼看"), Buttons, and Level Names.
+- **Global Timer**: Added `HUDScene` to track total playtime across levels, displayed on simple/hard modes and end screen.
+- **End Scene**: New "Congratulations" scene displaying final time and "Play Again" functionality.
+- **Favicon**: Added SVG favicon.
+
+### Changed
+- **Level Names**: Renamed Level 1 to "简单模式" and Level 2 to "挑战模式".
+- **Scene Transition**: Skipped `TransitionScene` for Level 2 -> End transition to prevent logic hangs; added Camera Fade-In for smoothness.
+- **Start Animation**: Optimized Start Button scaling animation to prevent layout displacement.
+- **Piece Layout**: Adjusted scatter logic to ensure pieces spawn strictly in side columns (avoiding map overlap).
+
+### Removed
+- **Level 3 (Capital Rain)**: Temporarily disabled/removed from main flow to focus on Map Puzzle loop.
 ## [0.3.0] - 2025-12-14
 
 ### Added

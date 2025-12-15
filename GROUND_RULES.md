@@ -80,6 +80,24 @@ brew install git git-lfs graphviz pkg-config
 - **Jupyter Kernel**: `python3 -m ipykernel install --user --name=venv`
 - **Memory Issues**: Auto-switch to chunking or Polars
 
+---
+
+## 🔄 Git Workflow Rules
+
+### 远程推送策略 (Push Policy)
+- ✅ **只做本地提交**: 默认只执行 `git add` + `git commit`
+- ❌ **不自动推送**: 未经用户明确指示，禁止执行 `git push`
+- **原因**: 每次 `git push` 会触发 AWS Amplify 自动部署，产生构建费用和不必要的部署
+
+### 操作流程
+```bash
+# 正常操作 (默认)
+git add .
+git commit -m "message"
+
+# 仅在用户指示时
+git push origin main
+```
 
 ---
 *Claude Code will strictly follow these rules throughout the session.*

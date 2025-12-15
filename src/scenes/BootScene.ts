@@ -21,7 +21,7 @@ export default class BootScene extends Phaser.Scene {
 
         console.log(`Loaded map data: ${mapData.provinces.length} provinces`);
 
-        // Go to GameScene
-        this.scene.start('GameScene', { mapData: mapData });
+        // Go to StartScene
+        this.scene.start('StartScene');
     }
 }

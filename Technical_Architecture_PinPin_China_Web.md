@@ -58,12 +58,13 @@ graph TD
 ## 3. Route Definitions
 | Route | Purpose |
 |-------|---------|
-| `/` | **首页 (Home)**: 游戏入口、难度设置、全屏切换 |
-| `/play` | **GameScene**: Level 1 (Magnetic Map - Easy) |
-| `Transition`| **TransitionScene**: Cutsheen managing visual transition (Celebration -> Fade -> Next Level) |
-| `/level2` | **Level2HardScene**: Level 2 (Magnetic Map - Hard) |
-| `/level3` | **Level3Scene**: Level 3 (formerly L2) Capital Rain |
-| `/result` | **结算页**: 评分展示、分享卡片生成 |
+| Route | Purpose |
+|-------|---------|
+| `/` | **首页 (StartScene)**: 游戏入口、开始按钮 (启动全局计时) |
+| `/play` | **GameScene**: Level 1 (简单模式)，含 `HUDScene` (Timer) |
+| `/level2` | **Level2HardScene**: Level 2 (挑战模式)，无缝衔接计时 |
+| `/end` | **EndScene**: 结算页，展示总耗时，重玩逻辑 |
+| `HUD` | **HUDScene**: 独立 Overlay 场景，用于做全局秒表 |
 
 *注：建议将 Level 1 和 Level 2 合并为一个 Scene 或使用 Phaser 的 Scene Manager 平滑过渡，减少页面跳转带来的割裂感。*
 

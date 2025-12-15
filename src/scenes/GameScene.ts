@@ -19,6 +19,9 @@ export default class GameScene extends Phaser.Scene {
         this.mapData = data.mapData;
         console.log('GameScene: Starting Level 1');
 
+        // Launch HUD (Timer)
+        this.scene.launch('HUDScene');
+
         // Soft gradient or solid pastel color
         // Light Cyan to contrast with White Map
         const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xe0f7fa);
@@ -73,8 +76,14 @@ export default class GameScene extends Phaser.Scene {
             this.slotMap.set(province.adcode, slot);
 
             // 3. Create Piece (The Draggable)
+            // Fix Layout: Ensure pieces are strictly in the side columns.
+            // Map is roughly 85% height centered.
+            // Safe side width is approx (1280 - (0.85 * 720 * 1.35)) / 2 ~= 220px.
+            // Let's use 200px width for scatter area.
             const isLeft = index % 2 === 0;
-            const scatterX = isLeft ? Phaser.Math.Between(50, 300) : Phaser.Math.Between(SCREEN_W - 300, SCREEN_W - 50);
+            const scatterX = isLeft
+                ? Phaser.Math.Between(50, 200)
+                : Phaser.Math.Between(SCREEN_W - 200, SCREEN_W - 50);
             const scatterY = Phaser.Math.Between(50, SCREEN_H - 50);
 
             const piece = new MapPiece(this, province, MAP_SCALE, { x: scatterX, y: scatterY });
@@ -95,7 +104,7 @@ export default class GameScene extends Phaser.Scene {
             piece.on('drag-update', this.handleDragUpdate, this);
         });
 
-        this.add.text(10, 10, 'Level 1: Magnetic Map', { fontSize: '24px', color: '#000' });
+        this.add.text(10, 10, '省份拼拼看-简单模式', { fontSize: '24px', color: '#000' }).setDepth(100);
 
         // Debug Helper for Automating Verification
         (window as any).solveLevel1 = () => {
@@ -154,7 +163,7 @@ export default class GameScene extends Phaser.Scene {
                 this.scene.start('TransitionScene', {
                     mapData: this.mapData,
                     nextLevel: 'Level2HardScene',
-                    title: 'Level 2: 挑战模式',
+                    title: '省份拼拼看-挑战模式',
                     subtitle: '无边界提示 · 精准释放'
                 });
             });
