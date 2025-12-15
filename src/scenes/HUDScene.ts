@@ -12,7 +12,7 @@ export default class HUDScene extends Phaser.Scene {
         this.startTime = this.registry.get('startTime') || Date.now();
 
         // Display in top-right corner
-        const _bg = this.add.rectangle(this.scale.width - 120, 30, 220, 50, 0x000000, 0.5);
+        this.add.rectangle(this.scale.width - 120, 30, 220, 50, 0x000000, 0.5);
 
         this.timeText = this.add.text(this.scale.width - 120, 30, 'Time: 0s', {
             fontSize: '24px',

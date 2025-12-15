@@ -48,7 +48,7 @@ export default class EndScene extends Phaser.Scene {
 
         // Replay Button
         const btnBg = this.add.rectangle(W / 2, H * 0.7, 240, 80, 0x44cc44);
-        const _btnText = this.add.text(W / 2, H * 0.7, '再来一次', {
+        this.add.text(W / 2, H * 0.7, '再来一次', {
             fontSize: '40px',
             color: '#ffffff'
         }).setOrigin(0.5);
